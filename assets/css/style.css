@@ -1,0 +1,123 @@
+html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.font-prompt {
+    font-family: 'Prompt', sans-serif;
+}
+
+/* Safe area for notched phones */
+.safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+/* Product Card */
+.product-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+@media (hover: hover) {
+    .product-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+    }
+}
+
+.product-image-container {
+    overflow: hidden;
+}
+
+.product-image-container img {
+    transition: transform 0.5s ease;
+}
+
+@media (hover: hover) {
+    .product-card:hover .product-image-container img {
+        transform: scale(1.03);
+    }
+}
+
+/* Active state for touch */
+.product-card:active {
+    transform: scale(0.98);
+}
+
+/* Touch-friendly buttons */
+button, a, [role="button"] {
+    touch-action: manipulation;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f5f5f5;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #d4d4d4;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #a78bfa;
+}
+
+/* Prevent horizontal scroll on iOS */
+html, body {
+    overflow-x: hidden;
+    position: relative;
+}
+
+/* Better tap targets on mobile */
+@media (max-width: 768px) {
+    .product-card .p-5 {
+        padding: 1rem;
+    }
+
+    .product-card h3 {
+        font-size: 1rem;
+    }
+
+    .product-card .text-xl {
+        font-size: 1.125rem;
+    }
+}
+
+/* iPad specific - 2 columns on portrait */
+@media (min-width: 768px) and (max-width: 1024px) {
+    #product-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.25rem;
+    }
+}
+
+/* Line clamp support */
+.line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* iOS bounce fix */
+@supports (-webkit-touch-callout: none) {
+    body {
+        -webkit-overflow-scrolling: touch;
+    }
+}
