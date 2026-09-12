@@ -12,6 +12,7 @@ function renderHeader(activePage) {
   const links = [
     { href: "index.html", label: "ร้านค้า", key: "shop" },
     { href: "topup.html", label: "เติมพ้อย", key: "topup" },
+    { href: "contact.html", label: "ติดต่อแอดมิน", key: "contact" },
     { href: "profile.html", label: "โปรไฟล์", key: "profile" },
   ];
 
@@ -50,6 +51,32 @@ function renderHeader(activePage) {
 function handleLogout() {
   logoutUser();
   window.location.href = "index.html";
+}
+
+function compressImage(file, maxSize = 1000, quality = 0.72) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const imgEl = new Image();
+      imgEl.onload = () => {
+        let { width, height } = imgEl;
+        if (width > maxSize) {
+          height = Math.round((height * maxSize) / width);
+          width = maxSize;
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(imgEl, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      imgEl.onerror = () => reject(new Error("read image failed"));
+      imgEl.src = e.target.result;
+    };
+    reader.onerror = () => reject(new Error("read file failed"));
+    reader.readAsDataURL(file);
+  });
 }
 
 function escapeHtml(str) {

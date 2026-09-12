@@ -52,7 +52,7 @@ function renderProduct(product, db) {
   mount.innerHTML = `
     <div class="card">
       <div class="flex-row" style="align-items:flex-start; gap:20px;">
-        <div class="ticket-icon" style="width:80px;height:80px;font-size:46px;">${product.image}</div>
+        <div class="ticket-icon" style="width:80px;height:80px;font-size:46px;">${product.photo ? `<img src="${product.photo}" alt="" />` : product.image}</div>
         <div style="flex:1; min-width:240px;">
           <div class="ticket-cat">${cat ? cat.icon + " " + escapeHtml(cat.name) : ""}</div>
           <h2>${escapeHtml(product.name)}</h2>
@@ -105,6 +105,8 @@ function handleBuy(productId) {
     toast("พ้อยไม่เพียงพอ", "err");
     return;
   }
+
+  if (!confirm(`ยืนยันการซื้อ "${product.name}" ด้วย ${product.price.toLocaleString()} พ้อย?`)) return;
 
   // ตัดพ้อย มอบรหัส บันทึกออเดอร์
   dbUser.points -= product.price;

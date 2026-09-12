@@ -65,6 +65,7 @@ function switchTab(tab) {
     products: renderProductsTab,
     categories: renderCategoriesTab,
     topupcodes: renderTopupCodesTab,
+    requests: renderTopupRequestsTab,
     customers: renderCustomersTab,
     orders: renderOrdersTab,
     settings: renderSettingsTab,
@@ -83,6 +84,7 @@ function renderOverview() {
     (a, p) => a + p.stock.filter((s) => !s.sold).length,
     0
   );
+  const pendingCount = db.topupRequests.filter((r) => r.status === "pending").length;
 
   mount.innerHTML = `
     <h3>ภาพรวมระบบ</h3>
@@ -93,6 +95,7 @@ function renderOverview() {
       <div class="card"><span class="text-faint">พ้อยที่ใช้จ่ายรวม</span><h2>${totalRevenue.toLocaleString()}</h2></div>
       <div class="card"><span class="text-faint">บัญชีคงเหลือในสต๊อก</span><h2>${stockLeft}</h2></div>
       <div class="card"><span class="text-faint">โค้ดเติมพ้อยที่ยังไม่ใช้</span><h2>${db.topupCodes.filter((c) => !c.used).length}</h2></div>
+      <div class="card"><span class="text-faint">คำขอเติมเงินรอตรวจสอบ</span><h2 style="color:${pendingCount > 0 ? "var(--amber)" : "inherit"}">${pendingCount}</h2></div>
     </div>
   `;
 }
@@ -186,6 +189,13 @@ function openProductForm(productId) {
           <label>รายละเอียดสินค้า</label>
           <textarea id="pf-desc" required>${product ? escapeHtml(product.desc) : ""}</textarea>
         </div>
+        <div class="form-group">
+          <label>รูปโชว์สินค้า (ไม่บังคับ)</label>
+          <input type="file" id="pf-photo" accept="image/*" onchange="previewProductPhoto()" />
+          <div id="pf-photo-preview" class="mt-8">
+            ${product && product.photo ? `<img src="${product.photo}" class="product-photo-preview" />` : ""}
+          </div>
+        </div>
         <div class="flex-row">
           <button type="submit" class="btn btn-primary">${product ? "บันทึกการแก้ไข" : "เพิ่มสินค้า"}</button>
           <button type="button" class="btn btn-ghost" onclick="closeProductForm()">ยกเลิก</button>
@@ -205,22 +215,42 @@ function closeProductForm() {
   document.getElementById("product-form-mount").innerHTML = "";
 }
 
-function saveProductForm() {
+function previewProductPhoto() {
+  const input = document.getElementById("pf-photo");
+  const preview = document.getElementById("pf-photo-preview");
+  const file = input.files && input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    preview.innerHTML = `<img src="${e.target.result}" class="product-photo-preview" />`;
+  };
+  reader.readAsDataURL(file);
+}
+
+async function saveProductForm() {
   const db = getDB();
   const name = document.getElementById("pf-name").value.trim();
   const icon = document.getElementById("pf-icon").value.trim() || "🎮";
   const categoryId = document.getElementById("pf-category").value;
   const price = parseInt(document.getElementById("pf-price").value, 10);
   const desc = document.getElementById("pf-desc").value.trim();
+  const photoInput = document.getElementById("pf-photo");
 
   if (!name || !price || price <= 0) {
     toast("กรุณากรอกข้อมูลให้ครบและราคาต้องมากกว่า 0", "err");
     return;
   }
 
+  let photo = editingProductId
+    ? (db.products.find((x) => x.id === editingProductId) || {}).photo || ""
+    : "";
+  if (photoInput && photoInput.files && photoInput.files[0]) {
+    photo = await compressImage(photoInput.files[0]);
+  }
+
   if (editingProductId) {
     const p = db.products.find((x) => x.id === editingProductId);
-    Object.assign(p, { name, image: icon, categoryId, price, desc });
+    Object.assign(p, { name, image: icon, categoryId, price, desc, photo });
     toast("แก้ไขสินค้าสำเร็จ", "ok");
   } else {
     db.products.push({
@@ -230,6 +260,7 @@ function saveProductForm() {
       categoryId,
       price,
       desc,
+      photo,
       stock: [],
       soldCount: 0,
     });
@@ -348,7 +379,7 @@ function renderCategoriesTab() {
 
     <div class="card mt-16">
       <table>
-        <thead><tr><th>ไอคอน</th><th>ชื่อหมวดหมู่</th><th>จำนวนสินค้า</th><th></th></tr></thead>
+        <thead><tr><th>ไอคอน</th><th>ชื่อหมวดหมู่</th><th>จำนวนสินค้า</th><th>จัดการ</th></tr></thead>
         <tbody>
           ${db.categories
             .map((c) => {
@@ -358,13 +389,17 @@ function renderCategoriesTab() {
                 <td style="font-size:20px">${c.icon}</td>
                 <td>${escapeHtml(c.name)}</td>
                 <td>${count}</td>
-                <td><button class="btn btn-danger btn-sm" onclick="deleteCategory('${c.id}')">ลบ</button></td>
+                <td class="flex-row">
+                  <button class="btn btn-ghost btn-sm" onclick="openCategoryEdit('${c.id}')">เปลี่ยนชื่อ</button>
+                  <button class="btn btn-danger btn-sm" onclick="deleteCategory('${c.id}')">ลบ</button>
+                </td>
               </tr>`;
             })
             .join("")}
         </tbody>
       </table>
     </div>
+    <div id="cat-editor-mount" class="mt-16"></div>
   `;
 
   document.getElementById("cat-form").addEventListener("submit", (e) => {
@@ -377,6 +412,54 @@ function renderCategoriesTab() {
     saveDB(db2);
     toast("เพิ่มหมวดหมู่แล้ว", "ok");
     renderCategoriesTab();
+  });
+}
+
+function openCategoryEdit(catId) {
+  const db = getDB();
+  const cat = db.categories.find((c) => c.id === catId);
+  const mount = document.getElementById("cat-editor-mount");
+  if (!cat) return;
+
+  mount.innerHTML = `
+    <div class="card">
+      <div class="flex-between">
+        <h4 class="mb-0">เปลี่ยนชื่อหมวดหมู่</h4>
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('cat-editor-mount').innerHTML=''">ปิด</button>
+      </div>
+      <form id="cat-edit-form" class="grid-2 mt-16" style="align-items:flex-end">
+        <div class="form-group">
+          <label>ชื่อหมวดหมู่</label>
+          <input type="text" id="cat-edit-name" value="${escapeHtml(cat.name)}" required />
+        </div>
+        <div class="form-group">
+          <label>ไอคอน</label>
+          <input type="text" id="cat-edit-icon" value="${escapeHtml(cat.icon)}" style="width:100px" required />
+        </div>
+        <button type="submit" class="btn btn-primary" style="grid-column:1/-1">บันทึก</button>
+      </form>
+      <div id="cat-edit-msg" class="mt-16"></div>
+    </div>
+  `;
+
+  document.getElementById("cat-edit-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const name = document.getElementById("cat-edit-name").value.trim();
+    const icon = document.getElementById("cat-edit-icon").value.trim() || "🎮";
+    if (!name) {
+      document.getElementById("cat-edit-msg").innerHTML = `<div class="error-box">กรุณากรอกชื่อหมวดหมู่</div>`;
+      return;
+    }
+    const db2 = getDB();
+    const target = db2.categories.find((c) => c.id === catId);
+    if (target) {
+      target.name = name;
+      target.icon = icon;
+      saveDB(db2);
+    }
+    toast("เปลี่ยนชื่อหมวดหมู่แล้ว", "ok");
+    renderCategoriesTab();
+    openCategoryEdit(catId);
   });
 }
 
@@ -465,6 +548,125 @@ function deleteTopupCode(code) {
   db.topupCodes = db.topupCodes.filter((c) => c.code !== code);
   saveDB(db);
   renderTopupCodesTab();
+}
+
+/* ============================================================
+   คำขอเติมเงินผ่าน QR (สลิป)
+   ============================================================ */
+function renderTopupRequestsTab() {
+  const db = getDB();
+  const mount = document.getElementById("panel-requests");
+  const qr = db.settings.qr || {};
+  const rows = [...db.topupRequests].sort((a, b) => (a.date < b.date ? 1 : -1));
+
+  mount.innerHTML = `
+    <h3>คำขอเติมเงินผ่าน QR</h3>
+    <div class="card">
+      <p class="text-faint mb-0">
+        เมื่ออนุมัติแล้ว พ้อยจะเข้าบัญชีของลูกค้าทันที ดูสลิปได้โดยคลิกที่รูปสลิป
+      </p>
+    </div>
+    ${rows
+      .map(
+        (r) => `
+      <div class="card request-card ${r.status}">
+        <div class="flex-between">
+          <div>
+            <div class="flex-row" style="gap:8px;align-items:center">
+              <h4 class="mb-0">${escapeHtml(r.username)}</h4>
+              ${
+                r.status === "pending"
+                  ? `<span class="tag tag-customer">รอตรวจสอบ</span>`
+                  : r.status === "approved"
+                  ? `<span class="tag tag-ok">อนุมัติ +${(r.approvedPoints || 0).toLocaleString()} พ้อย</span>`
+                  : `<span class="tag tag-banned">ถูกปฏิเสธ</span>`
+              }
+            </div>
+            <div class="text-faint mt-8" style="font-size:13px">
+              ${r.amount.toLocaleString()} บาท
+              ${r.note ? ` · หมายเหตุ: ${escapeHtml(r.note)}` : ""}
+              <div>ส่งเมื่อ ${escapeHtml(r.date)}</div>
+            </div>
+          </div>
+          <div class="flex-row" style="gap:8px">
+            ${r.status === "pending"
+              ? `
+              <button class="btn btn-primary btn-sm" onclick="approveTopupRequest('${r.id}')">อนุมัติ</button>
+              <button class="btn btn-danger btn-sm" onclick="rejectTopupRequest('${r.id}')">ปฏิเสธ</button>`
+              : `<button class="btn btn-ghost btn-sm" onclick="openSlip('${r.id}')">ดูสลิป</button>`}
+          </div>
+        </div>
+        <div class="mt-16">
+          <label class="text-faint" style="font-size:12.5px">สลิปโอนเงิน (คลิกเพื่อดูใหญ่)</label>
+          <div class="mt-8">
+            <img class="slip-thumb" onclick="openSlip('${r.id}')" src="${r.slip}" alt="สลิป" />
+          </div>
+        </div>
+      </div>`
+      )
+      .join("") || `<div class="card"><p class="text-faint mb-0">ยังไม่มีคำขอเติมเงินผ่าน QR</p></div>`}
+  `;
+}
+
+function getTopupRequest(id) {
+  const db = getDB();
+  return db.topupRequests.find((r) => r.id === id);
+}
+
+function openSlip(id) {
+  const r = getTopupRequest(id);
+  if (!r) return;
+  const w = window.open("", "_blank", "width=760,height=520");
+  w.document.write(`
+    <html><head><title>สลิป — ${r.username}</title></head>
+    <body style="margin:0;background:#111;display:flex;align-items:center;justify-content:center;min-height:100vh">
+      <div style="max-width:90%;max-height:90%">
+        <img src="${r.slip}" style="max-width:100%;max-height:90vh;border-radius:8px;display:block" />
+        <p style="color:#999;text-align:center;font-size:13px">${r.username} — ${r.amount.toLocaleString()} บาท — ${r.date}</p>
+      </div>
+    </body></html>`);
+}
+
+function approveTopupRequest(id) {
+  const r = getTopupRequest(id);
+  if (!r || r.status !== "pending") return;
+
+  const pointsRaw = prompt(
+    `อนุมัติการเติมเงินของ ${r.username} จำนวน ${r.amount.toLocaleString()} บาท\nกรอกจำนวนพ้อยที่จะเติมให้ (พ้อยจะเข้าทันที):`,
+    String(r.amount)
+  );
+  const points = parseInt(pointsRaw, 10);
+  if (isNaN(points) || points <= 0) {
+    toast("ยกเลิก หรือกรอกจำนวนพ้อยไม่ถูกต้อง", "err");
+    return;
+  }
+
+  const db = getDB();
+  const user = db.users.find((u) => u.id === r.userId);
+  if (!user) {
+    toast("ไม่พบบัญชีของลูกค้าคนนี้แล้ว", "err");
+    return;
+  }
+
+  r.status = "approved";
+  r.approvedPoints = points;
+  user.points += points;
+  saveDB(db);
+
+  toast(`อนุมัติแล้ว! เติม ${points.toLocaleString()} พ้อย ให้ ${r.username}`, "ok");
+  renderTopupRequestsTab();
+}
+
+function rejectTopupRequest(id) {
+  const r = getTopupRequest(id);
+  if (!r || r.status !== "pending") return;
+  if (!confirm(`ปฏิเสธคำขอเติมเงินของ ${r.username} จำนวน ${r.amount.toLocaleString()} บาท?`)) return;
+
+  const db = getDB();
+  r.status = "rejected";
+  saveDB(db);
+  toast("ปฏิเสธคำขอแล้ว", "ok");
+  renderTopupRequestsTab();
 }
 
 /* ============================================================
@@ -641,6 +843,7 @@ function renderOrdersTab() {
 function renderSettingsTab() {
   const db = getDB();
   const mount = document.getElementById("panel-settings");
+  const qr = db.settings.qr || {};
 
   mount.innerHTML = `
     <h3>ตั้งค่าระบบ</h3>
@@ -660,6 +863,41 @@ function renderSettingsTab() {
     </div>
 
     <div class="card mt-16" style="max-width:460px">
+      <h4>บัญชีรับเงิน (QR PromptPay)</h4>
+      <form id="qr-settings-form" class="mt-16">
+        <div class="form-group">
+          <label>เปิดใช้งานระบบเติมเงินผ่าน QR</label>
+          <select id="st-qr-active">
+            <option value="true" ${qr.active ? "selected" : ""}>เปิด</option>
+            <option value="false" ${!qr.active ? "selected" : ""}>ปิด</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>เบอร์ PromptPay (ไม่ต้องมีขีด เช่น 0821234567)</label>
+          <input type="text" id="st-qr-account" value="${escapeHtml(qr.account || "")}" placeholder="0821234567" />
+        </div>
+        <div class="form-group">
+          <label>รูป QR (อัปโหลดรูป QR ของธนาคารได้ — จะแสดงที่หน้าเติมเงินแทน QR อัตโนมัติ)</label>
+          <input type="file" id="st-qr-image" accept="image/*" onchange="previewQrImage()" />
+          <div id="st-qr-image-preview" class="mt-8">
+            ${qr.qrImage ? `<img src="${qr.qrImage}" class="product-photo-preview" />` : ""}
+          </div>
+          ${qr.qrImage ? `<button type="button" class="btn btn-ghost btn-sm mt-8" onclick="clearQrImage()">ลบรูป QR</button>` : ""}
+        </div>
+        <div class="form-group">
+          <label>ชื่อผู้รับเงิน</label>
+          <input type="text" id="st-qr-holder" value="${escapeHtml(qr.holder || "")}" />
+        </div>
+        <div class="form-group">
+          <label>ธนาคาร / สำนักงาน (แสดงบนหน้าเติมเงิน)</label>
+          <input type="text" id="st-qr-bank" value="${escapeHtml(qr.bank || "PromptPay")}" />
+        </div>
+        <button type="submit" class="btn btn-primary">บันทึกบัญชี QR</button>
+      </form>
+      <div id="qr-settings-msg" class="mt-16"></div>
+    </div>
+
+    <div class="card mt-16" style="max-width:460px">
       <h4>รีเซ็ตข้อมูลทั้งหมด</h4>
       <p class="text-faint">ล้างข้อมูลทั้งหมดกลับไปเป็นชุดข้อมูลตัวอย่างเริ่มต้น การกระทำนี้ไม่สามารถย้อนกลับได้</p>
       <button class="btn btn-danger" onclick="handleResetAll()">รีเซ็ตข้อมูลระบบ</button>
@@ -669,12 +907,51 @@ function renderSettingsTab() {
   document.getElementById("settings-form").addEventListener("submit", (e) => {
     e.preventDefault();
     const db2 = getDB();
-    db2.settings.siteName = document.getElementById("st-sitename").value.trim() || "PixelVault";
+    db2.settings.siteName = document.getElementById("st-sitename").value.trim() || "LOVE SIXHUB";
     db2.settings.adminCode = document.getElementById("st-admincode").value.trim() || "ADMIN2024";
     saveDB(db2);
     document.getElementById("settings-msg").innerHTML = `<div class="ok-box">บันทึกการตั้งค่าแล้ว</div>`;
     renderHeader("");
   });
+
+  const qrSettingsForm = document.getElementById("qr-settings-form");
+  if (qrSettingsForm) {
+    qrSettingsForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const db2 = getDB();
+      db2.settings.qr = db2.settings.qr || {};
+      db2.settings.qr.active = document.getElementById("st-qr-active").value === "true";
+      db2.settings.qr.account = document.getElementById("st-qr-account").value.trim().replace(/[^0-9]/g, "");
+      db2.settings.qr.holder = document.getElementById("st-qr-holder").value.trim() || "LOVE SIXHUB";
+      db2.settings.qr.bank = document.getElementById("st-qr-bank").value.trim() || "PromptPay";
+      const qrImgInput = document.getElementById("st-qr-image");
+      if (qrImgInput && qrImgInput.files && qrImgInput.files[0]) {
+        db2.settings.qr.qrImage = await compressImage(qrImgInput.files[0], 600, 0.85);
+      }
+      saveDB(db2);
+      document.getElementById("qr-settings-msg").innerHTML = `<div class="ok-box">บันทึกบัญชี QR แล้ว</div>`;
+    });
+  }
+}
+
+function previewQrImage() {
+  const input = document.getElementById("st-qr-image");
+  const file = input.files && input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    document.getElementById("st-qr-image-preview").innerHTML = `<img src="${e.target.result}" class="product-photo-preview" />`;
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearQrImage() {
+  const db = getDB();
+  db.settings.qr = db.settings.qr || {};
+  db.settings.qr.qrImage = "";
+  saveDB(db);
+  toast("ลบรูป QR แล้ว", "ok");
+  renderSettingsTab();
 }
 
 function handleResetAll() {

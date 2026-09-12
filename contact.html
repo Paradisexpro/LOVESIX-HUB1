@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ติดต่อแอดมิน — LOVE SIXHUB</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<div class="container section">
+  <div class="section-head" style="text-align:center">
+    <div style="margin:0 auto">
+      <h2>ติดต่อแอดมิน</h2>
+      <p>มีปัญหาเรื่องการซื้อขาย เติมเงิน หรือสอบถามเพิ่มเติม ทักไลน์มาได้เลย</p>
+    </div>
+  </div>
+
+  <div class="card" style="max-width:420px;margin:0 auto;text-align:center">
+    <div class="contact-avatar">💬</div>
+    <h3>แอดมิน LOVE SIXHUB</h3>
+    <p class="text-dim" style="font-size:14px;line-height:1.7">
+      ตอบไว ทักมาก่อนได้เลย<br />
+      อย่าลืมแจ้งชื่อผู้ใช้ + เลยอด/ref เพื่อให้เช็คออเดอร์ได้เร็วขึ้น
+    </p>
+    <a class="line-btn" href="https://line.me/ti/p/keJXpCgpfA" target="_blank" rel="noopener">
+      <span class="line-logo" aria-hidden="true"></span>
+      <span>ทักแชท LINE</span>
+    </a>
+    <div class="line-hint">@LOVESIXHUB</div>
+  </div>
+</div>
+
+<footer>© 2026 LOVE SIXHUB — เว็บไซต์สาธิตระบบขายไอดีเกม</footer>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+<script src="js/db.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/main.js"></script>
+<script>initDB().then(() => renderHeader("contact"));</script>
+</body>
+</html>

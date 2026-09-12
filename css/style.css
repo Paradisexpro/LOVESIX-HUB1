@@ -1,27 +1,27 @@
 /* ============================================================
-   PixelVault — design tokens
-   ฐาน: กรมท่าเข้ม + ทองอำพัน (พ้อย/ราคา) + เขียวมิ้นต์ (แอคชัน)
+   LOVE SIXHUB — design tokens
+   ฐาน: ทองหมองชมพูเข้ม + ชมพูสว่าง (แอคชัน/ไฮไลต์) + ชมพู (ราคา)
    คอนเซปต์การ์ดสินค้า: "ตั๋วไถ่รหัส" (ticket stub) มีรอยปรุกลาง
    ============================================================ */
 
 @import url("https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap");
 
 :root {
-  --bg: #120f1c;
-  --bg-soft: #1a1628;
-  --panel: #1f1a30;
-  --panel-2: #251f3a;
-  --line: #362e50;
-  --text: #eae6f7;
-  --text-dim: #a79fc4;
-  --text-faint: #776e93;
+  --bg: #1a0f1c;
+  --bg-soft: #241422;
+  --panel: #2a1728;
+  --panel-2: #321d30;
+  --line: #4a2842;
+  --text: #fbe6f2;
+  --text-dim: #cf9ec4;
+  --text-faint: #8f6496;
 
-  --amber: #f2b544;
-  --amber-soft: #3a2c17;
-  --mint: #35e0af;
-  --mint-soft: #123227;
-  --pink: #ff5d8f;
-  --pink-soft: #391a26;
+  --amber: #ff9ab8;
+  --amber-soft: #3d1b30;
+  --mint: #ff6f9f;
+  --mint-soft: #3d1b2f;
+  --pink: #ff3d6e;
+  --pink-soft: #3a1522;
 
   --radius: 14px;
   --radius-sm: 8px;
@@ -44,8 +44,8 @@ html, body {
 
 body {
   background-image:
-    radial-gradient(ellipse 700px 400px at 15% -5%, rgba(242, 181, 68, 0.08), transparent 60%),
-    radial-gradient(ellipse 800px 500px at 100% 10%, rgba(53, 224, 175, 0.07), transparent 60%);
+    radial-gradient(ellipse 700px 400px at 15% -5%, rgba(255, 154, 184, 0.09), transparent 60%),
+    radial-gradient(ellipse 800px 500px at 100% 10%, rgba(255, 111, 159, 0.08), transparent 60%);
   background-attachment: fixed;
 }
 
@@ -79,7 +79,7 @@ a { color: inherit; text-decoration: none; }
   position: sticky;
   top: 0;
   z-index: 30;
-  background: rgba(18, 15, 28, 0.86);
+  background: rgba(26, 15, 28, 0.86);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--line);
 }
@@ -167,7 +167,7 @@ a { color: inherit; text-decoration: none; }
 .btn:active { transform: translateY(1px); }
 .btn-sm { padding: 7px 14px; font-size: 13.5px; }
 
-.btn-primary { background: var(--mint); color: #0e2c22; }
+.btn-primary { background: var(--mint); color: #2a0f1c; }
 .btn-primary:hover { filter: brightness(1.08); }
 
 .btn-outline {
@@ -180,7 +180,7 @@ a { color: inherit; text-decoration: none; }
 .btn-ghost { background: var(--panel); color: var(--text); }
 .btn-ghost:hover { background: var(--panel-2); }
 
-.btn-danger { background: var(--pink); color: #2c0e18; }
+.btn-danger { background: var(--pink); color: #fff; }
 .btn-danger:hover { filter: brightness(1.08); }
 
 .btn-block { width: 100%; }
@@ -305,7 +305,7 @@ a { color: inherit; text-decoration: none; }
   transition: transform 0.15s, border-color 0.15s;
 }
 
-.ticket:hover { transform: translateY(-3px); border-color: #4a3f70; }
+.ticket:hover { transform: translateY(-3px); border-color: #6a3a5e; }
 
 .ticket-top {
   padding: 22px 18px 16px;
@@ -321,6 +321,24 @@ a { color: inherit; text-decoration: none; }
   background: var(--panel-2);
   border-radius: var(--radius-sm);
   flex-shrink: 0;
+  overflow: hidden;
+}
+
+.ticket-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.product-photo-preview {
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  display: block;
+  margin-top: 8px;
 }
 
 .ticket-title { font-size: 15.5px; margin-bottom: 4px; line-height: 1.4; }
@@ -466,6 +484,186 @@ tr:last-child td { border-bottom: none; }
 .tag-customer { background: var(--panel-2); color: var(--text-dim); }
 .tag-banned { background: var(--pink-soft); color: var(--pink); }
 .tag-ok { background: var(--mint-soft); color: var(--mint); }
+
+/* -------- เติมเงินผ่าน QR -------- */
+.qr-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  background: #fff;
+  border-radius: var(--radius);
+  padding: 18px;
+  margin-bottom: 18px;
+}
+
+.qr-box img {
+  width: 220px;
+  height: 220px;
+  border-radius: 8px;
+}
+
+.qr-meta { text-align: center; }
+
+.qr-acc { font-size: 13px; color: #333; font-weight: 600; }
+
+.slip-mini {
+  margin-top: 8px;
+  max-width: 220px;
+}
+
+.slip-mini img {
+  width: 100%;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+}
+
+.list-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 13.5px;
+}
+
+.list-row:last-child { border-bottom: none; }
+
+.slip-thumb {
+  width: 150px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  cursor: zoom-in;
+  display: block;
+}
+
+.request-card {
+  border-left: 3px solid var(--line);
+}
+
+.request-card.pending { border-left-color: var(--amber); }
+
+.request-card.approved { border-left-color: var(--mint); }
+
+.request-card.rejected { border-left-color: var(--pink); }
+
+/* -------- ปุ่มแนบสลิป -------- */
+.file-input { display: none; }
+
+.file-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 999px;
+  background: var(--panel-2);
+  border: 1px dashed var(--line);
+  color: var(--text);
+  font-weight: 600;
+  font-size: 13.5px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.file-upload-btn:hover { border-color: var(--amber); color: var(--amber); }
+
+.file-upload-btn.has-file {
+  background: var(--mint-soft);
+  color: var(--mint);
+  border: 1px solid rgba(53, 224, 175, 0.4);
+}
+
+.file-name { font-size: 12.5px; color: var(--text-faint); margin-top: 8px; }
+
+/* -------- Modal เด้งข้อความ -------- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  max-width: 380px;
+  width: 100%;
+  padding: 26px 24px;
+  text-align: center;
+}
+
+.modal-icon { font-size: 42px; margin-bottom: 6px; }
+
+.modal-card h3 { margin: 6px 0; }
+
+.modal-ok { margin-top: 18px; }
+
+/* -------- หน้าติดต่อแอดมิน / ปุ่ม LINE -------- */
+.contact-avatar {
+  font-size: 52px;
+  margin-bottom: 10px;
+}
+
+.line-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: #06c755;
+  color: #fff;
+  font-weight: 700;
+  font-size: 15px;
+  padding: 14px 26px;
+  border-radius: 999px;
+  margin-top: 18px;
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  box-shadow: 0 8px 20px rgba(6, 199, 85, 0.35);
+  cursor: pointer;
+}
+
+.line-btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.08);
+  box-shadow: 0 12px 26px rgba(6, 199, 85, 0.45);
+}
+
+.line-logo {
+  width: 22px;
+  height: 22px;
+  position: relative;
+}
+
+.line-logo::before,
+.line-logo::after {
+  content: "";
+  position: absolute;
+  width: 8px;
+  height: 11px;
+  background: #fff;
+  border-radius: 2px;
+  top: 5px;
+}
+
+.line-logo::before { left: 0; }
+
+.line-logo::after {
+  right: 0;
+  transform: rotate(-18deg) skewX(10deg);
+  border-radius: 2px 1px 1px 2px;
+}
+
+.line-hint {
+  margin-top: 10px;
+  font-size: 12.5px;
+  color: var(--text-faint);
+}
 
 /* -------- Admin layout -------- */
 .admin-shell { display: grid; grid-template-columns: 220px 1fr; gap: 24px; align-items: start; }

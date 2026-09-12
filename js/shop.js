@@ -85,7 +85,7 @@ function renderProductGrid() {
       return `
       <a class="ticket" href="product.html?id=${p.id}">
         <div class="ticket-top">
-          <div class="ticket-icon">${p.image}</div>
+          <div class="ticket-icon">${p.photo ? `<img src="${p.photo}" alt="" />` : p.image}</div>
           <div>
             <div class="ticket-title">${escapeHtml(p.name)}</div>
             <div class="ticket-cat">${cat ? cat.icon + " " + escapeHtml(cat.name) : ""}</div>

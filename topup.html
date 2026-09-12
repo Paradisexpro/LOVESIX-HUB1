@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>เติมพ้อย — PixelVault</title>
+<title>เติมพ้อย — LOVE SIXHUB</title>
 <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -14,29 +14,69 @@
   <div class="section-head">
     <div>
       <h2>เติมพ้อย</h2>
-      <p>กรอกโค้ดเติมพ้อยที่ได้รับจากแอดมินหรือช่องทางโปรโมชัน</p>
+      <p>สแกน QR เพื่อโอนเงิน แล้วแนบสลิป รอแอดมินอนุมัติ พ้อยจะเข้าทันที</p>
     </div>
   </div>
 
-  <div class="card" style="max-width:460px">
-    <div class="flex-between">
-      <span class="text-dim">พ้อยคงเหลือของคุณ</span>
-      <span class="ticket-price" style="font-size:20px" id="current-points">0</span>
-    </div>
-    <hr class="line" />
-    <div id="redeem-msg"></div>
-    <form id="redeem-form">
-      <div class="form-group">
-        <label for="redeem-code">โค้ดเติมพ้อย</label>
-        <input type="text" id="redeem-code" placeholder="เช่น WELCOME100" />
+  <div class="grid-2" style="align-items:start">
+    <div class="card">
+      <div class="flex-between">
+        <span class="text-dim">พ้อยคงเหลือของคุณ</span>
+        <span class="ticket-price" style="font-size:20px" id="current-points">0</span>
       </div>
-      <button type="submit" class="btn btn-primary btn-block">แลกโค้ด</button>
-    </form>
-    <p class="text-faint mt-16">ทดลองใช้โค้ด: <b>WELCOME100</b> (+100 พ้อย) หรือ <b>GAMER500</b> (+500 พ้อย)</p>
+      <hr class="line" />
+
+      <h3>เติมเงินผ่าน QR Code</h3>
+      <p class="text-faint">กรอกจำนวนเงินที่ต้องการเติม (บาท) จากนั้นสแกน QR เพื่อโอนเงิน:</p>
+
+      <div class="qr-box">
+        <img id="qr-img" alt="QR Code" />
+        <div class="qr-meta" id="qr-meta"></div>
+      </div>
+
+      <div id="qr-form">
+        <div class="form-group">
+          <label for="qr-amount">จำนวนเงิน (บาท)</label>
+          <input type="number" id="qr-amount" min="1" value="100" required />
+        </div>
+        <div class="form-group">
+          <label for="qr-note">หมายเหตุ (ไม่บังคับ)</label>
+          <input type="text" id="qr-note" placeholder="เช่น ชื่อเกม / เบอร์โทร" />
+        </div>
+        <div class="form-group">
+          <label>แนบสลิปโอนเงิน</label>
+          <input type="file" id="qr-slip" accept="image/*" required class="file-input" onchange="updateSlipFileName(this)" />
+          <label for="qr-slip" class="file-upload-btn" id="slip-btn">📎 แนบสลิปโอนเงิน</label>
+          <div id="slip-file-name" class="file-name"></div>
+          <div id="slip-preview"></div>
+        </div>
+        <button type="button" class="btn btn-primary btn-block" id="qr-submit">ส่งคำขอเติมเงิน</button>
+      </div>
+      <div id="qr-msg" class="mt-16"></div>
+    </div>
+
+    <div>
+      <div class="card">
+        <h3 class="mb-0">แลกโค้ดเติมพ้อย</h3>
+        <div id="redeem-msg"></div>
+        <form id="redeem-form">
+          <div class="form-group">
+            <label for="redeem-code">โค้ดเติมพ้อย</label>
+            <input type="text" id="redeem-code" placeholder="เช่น WELCOME100" />
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">แลกโค้ด</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h3 class="mb-0">ประวัติการเติมเงิน</h3>
+        <div id="topup-history"></div>
+      </div>
+    </div>
   </div>
 </div>
 
-<footer>© 2026 PixelVault — เว็บไซต์สาธิตระบบขายไอดีเกม</footer>
+<footer>© 2026 LOVE SIXHUB — เว็บไซต์สาธิตระบบขายไอดีเกม</footer>
 
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>

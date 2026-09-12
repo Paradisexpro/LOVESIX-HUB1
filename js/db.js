@@ -50,6 +50,7 @@ function nowStr() {
 /* -------- Seed ข้อมูลตั้งต้น -------- */
 function seedDB() {
   const categories = [
+    { id: "cat_gta", name: "GTA V", icon: "🚗" },
     { id: "cat_ff", name: "Free Fire", icon: "🔥" },
     { id: "cat_rov", name: "RoV", icon: "⚔️" },
     { id: "cat_pubg", name: "PUBG Mobile", icon: "🎯" },
@@ -58,56 +59,7 @@ function seedDB() {
     { id: "cat_mlbb", name: "Mobile Legends", icon: "🛡️" },
   ];
 
-  const products = [
-    {
-      id: "p1", categoryId: "cat_ff", name: "Free Fire — บัญชีตัวละครครบ + สกินปืนทอง",
-      desc: "เลเวล 65, ปลดล็อกตัวละครกว่า 20 ตัว, สกินปืน AK ทอง, ไดมอนด์คงเหลือ 3,200",
-      price: 350, image: "🔥",
-      stock: [
-        { code: "FF-ACC-2201 | pass: Fx91!aQ", sold: false },
-        { code: "FF-ACC-2202 | pass: Rz20#mK", sold: false },
-      ],
-      soldCount: 12,
-    },
-    {
-      id: "p2", categoryId: "cat_rov", name: "RoV — บัญชีฮีโร่ครบ 90% แรงค์ดาว",
-      desc: "ฮีโร่ 78/86 ตัว, สกินหายาก 15 ชิ้น, แรงค์ดาว ซีซั่นล่าสุด",
-      price: 590, image: "⚔️",
-      stock: [{ code: "ROV-ACC-1190 | pass: Vt83@Lp", sold: false }],
-      soldCount: 8,
-    },
-    {
-      id: "p3", categoryId: "cat_pubg", name: "PUBG Mobile — บัญชี Conqueror + ชุดพรีเมียม",
-      desc: "แรงค์ Conqueror, ชุด Glacier, M416 Glacier, RP ผ่านทุกซีซั่นย้อนหลัง",
-      price: 890, image: "🎯",
-      stock: [{ code: "PUBGM-ACC-3301 | pass: Gc55$Zt", sold: false }],
-      soldCount: 5,
-    },
-    {
-      id: "p4", categoryId: "cat_valo", name: "Valorant — บัญชี Immortal สกินมีดมังกร",
-      desc: "แรงค์ Immortal 2, สกินมีด Prime, สกินปืนคอลเลกชัน Reaver",
-      price: 1200, image: "🕹️",
-      stock: [], // ตัวอย่างสินค้าหมดสต๊อก
-      soldCount: 20,
-    },
-    {
-      id: "p5", categoryId: "cat_gi", name: "Genshin Impact — บัญชี AR 58 ตัวละคร 5 ดาวครบ",
-      desc: "Adventure Rank 58, ตัวละคร 5 ดาว 9 ตัว, ต้นสมบัติหลักครบ, พริมอเกมสำรอง 40,000",
-      price: 1500, image: "⭐",
-      stock: [{ code: "GI-ACC-5501 | pass: Yl77*Wq", sold: false }],
-      soldCount: 3,
-    },
-    {
-      id: "p6", categoryId: "cat_mlbb", name: "Mobile Legends — บัญชี Mythic สกิน Collector",
-      desc: "แรงค์ Mythic Glory, ฮีโร่ครบ 3 ตัว, สกิน Collector 4 ชิ้น",
-      price: 450, image: "🛡️",
-      stock: [
-        { code: "MLBB-ACC-7701 | pass: Ha12&Bn", sold: false },
-        { code: "MLBB-ACC-7702 | pass: Jo34%Cm", sold: false },
-      ],
-      soldCount: 17,
-    },
-  ];
+  const products = [];
 
   const users = [
     {
@@ -126,11 +78,24 @@ function seedDB() {
   ];
 
   return {
-    settings: { adminCode: "ADMIN2024", siteName: "PixelVault" },
+    settings: {
+      adminCode: "ADMIN2024",
+      siteName: "LOVE SIXHUB",
+      qr: {
+        active: true,
+        type: "promptpay",
+        account: "0821234567",
+        holder: "LOVE SIXHUB",
+        city: "Bangkok",
+        bank: "PromptPay",
+        qrImage: "",
+      },
+    },
     categories,
     products,
     users,
     topupCodes,
+    topupRequests: [],
     orders: [],
   };
 }
@@ -146,15 +111,36 @@ function toArray(v) {
 
 function normalizeDB(db) {
   if (!db || typeof db !== "object") return seedDB();
-  db.settings = db.settings || { adminCode: "ADMIN2024", siteName: "PixelVault" };
+  db.settings = db.settings || { adminCode: "ADMIN2024", siteName: "LOVE SIXHUB" };
+  if (db.settings.siteName === "PixelVault") db.settings.siteName = "LOVE SIXHUB";
+  db.settings.qr = db.settings.qr || {
+    active: true,
+    type: "promptpay",
+    account: "0821234567",
+    holder: "LOVE SIXHUB",
+    city: "Bangkok",
+    bank: "PromptPay",
+    qrImage: "",
+  };
   db.categories = toArray(db.categories);
+  const gtaIdx = db.categories.findIndex((c) => c.id === "cat_gta");
+  if (gtaIdx === -1) {
+    db.categories.unshift({ id: "cat_gta", name: "GTA V", icon: "🚗" });
+  } else if (gtaIdx !== 0) {
+    const [gta] = db.categories.splice(gtaIdx, 1);
+    db.categories.unshift(gta);
+  }
   db.products = toArray(db.products);
+  const legacySeedIds = ["p1", "p2", "p3", "p4", "p5", "p6", "p7"];
+  db.products = db.products.filter((p) => !legacySeedIds.includes(p.id));
   db.users = toArray(db.users);
   db.topupCodes = toArray(db.topupCodes);
+  db.topupRequests = toArray(db.topupRequests);
   db.orders = toArray(db.orders);
   db.products.forEach((p) => {
     p.stock = toArray(p.stock);
     p.soldCount = p.soldCount || 0;
+    p.photo = p.photo || "";
   });
   return db;
 }
