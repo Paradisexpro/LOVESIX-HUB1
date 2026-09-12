@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>โปรไฟล์ — PixelVault</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<div class="container section">
+  <div class="section-head">
+    <div>
+      <h2>โปรไฟล์ของฉัน</h2>
+      <p>ข้อมูลบัญชี พ้อยคงเหลือ และประวัติการสั่งซื้อ</p>
+    </div>
+  </div>
+
+  <div class="grid-2" style="align-items:start">
+    <div>
+      <div class="card" id="profile-info"></div>
+
+      <div class="card">
+        <h3>เปลี่ยนรหัสผ่าน</h3>
+        <div id="pass-msg"></div>
+        <form id="change-pass-form">
+          <div class="form-group">
+            <label for="old-pass">รหัสผ่านเดิม</label>
+            <input type="password" id="old-pass" required />
+          </div>
+          <div class="form-group">
+            <label for="new-pass">รหัสผ่านใหม่</label>
+            <input type="password" id="new-pass" required />
+          </div>
+          <div class="form-group">
+            <label for="confirm-pass">ยืนยันรหัสผ่านใหม่</label>
+            <input type="password" id="confirm-pass" required />
+          </div>
+          <button type="submit" class="btn btn-outline btn-block">บันทึกรหัสผ่านใหม่</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>ประวัติการซื้อ</h3>
+      <div id="order-history"></div>
+    </div>
+  </div>
+</div>
+
+<footer>© 2026 PixelVault — เว็บไซต์สาธิตระบบขายไอดีเกม</footer>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+<script src="js/db.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/main.js"></script>
+<script src="js/profile.js"></script>
+<script>initDB().then(() => initProfilePage());</script>
+</body>
+</html>

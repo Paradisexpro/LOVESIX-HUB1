@@ -1,0 +1,286 @@
+/* ============================================================
+   db.js — ตัวจัดการฐานข้อมูลด้วย Firebase Realtime Database
+   ข้อมูลทั้งหมด (สินค้า, หมวดหมู่, สมาชิก, ออเดอร์, โค้ดเติมพ้อย,
+   ตั้งค่า) ถูกเก็บไว้ที่ Firebase Realtime Database ของโปรเจกต์
+   lovesixshop
+   ============================================================ */
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAA7hiNqnwVQpsZR5oAeIRDocxxJXCAd90",
+  authDomain: "lovesixshop.firebaseapp.com",
+  databaseURL: "https://lovesixshop-default-rtdb.firebaseio.com",
+  projectId: "lovesixshop",
+  storageBucket: "lovesixshop.firebasestorage.app",
+  messagingSenderId: "50715656584",
+  appId: "1:50715656584:web:8caf882df411131481ba3d",
+  measurementId: "G-Y6S811MSF1",
+};
+
+/* เส้นทางหลักใน Realtime Database ที่เก็บข้อมูลทั้งระบบ */
+const DB_PATH = "pixelvault/db";
+
+/* ชื่อ key สำหรับเก็บเป็นสำรองใน localStorage (กรณี Firebase อ่าน/เขียนไม่ได้) */
+const DB_KEY = "gid_store_db_fb_fallback_v1";
+
+let app = null;
+let dbRef = null;
+let _cache = null;
+let _ready = null;
+let _usingFallback = false;
+
+/* -------- simple hash (ใช้แทนการเก็บรหัสผ่านแบบตัวอักษรล้วน) --------
+   หมายเหตุ: นี่คือระบบสาธิต ที่เก็บรหัสผ่านแบบ hash ฝั่ง client
+   ไม่เหมาะกับการใช้งานจริงที่ต้องการความปลอดภัยระดับ production */
+function simpleHash(str) {
+  let hash = 5381;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash * 33) ^ str.charCodeAt(i);
+  }
+  return (hash >>> 0).toString(16);
+}
+
+function uid(prefix = "id") {
+  return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function nowStr() {
+  return new Date().toLocaleString("th-TH", { hour12: false });
+}
+
+/* -------- Seed ข้อมูลตั้งต้น -------- */
+function seedDB() {
+  const categories = [
+    { id: "cat_ff", name: "Free Fire", icon: "🔥" },
+    { id: "cat_rov", name: "RoV", icon: "⚔️" },
+    { id: "cat_pubg", name: "PUBG Mobile", icon: "🎯" },
+    { id: "cat_valo", name: "Valorant", icon: "🕹️" },
+    { id: "cat_gi", name: "Genshin Impact", icon: "⭐" },
+    { id: "cat_mlbb", name: "Mobile Legends", icon: "🛡️" },
+  ];
+
+  const products = [
+    {
+      id: "p1", categoryId: "cat_ff", name: "Free Fire — บัญชีตัวละครครบ + สกินปืนทอง",
+      desc: "เลเวล 65, ปลดล็อกตัวละครกว่า 20 ตัว, สกินปืน AK ทอง, ไดมอนด์คงเหลือ 3,200",
+      price: 350, image: "🔥",
+      stock: [
+        { code: "FF-ACC-2201 | pass: Fx91!aQ", sold: false },
+        { code: "FF-ACC-2202 | pass: Rz20#mK", sold: false },
+      ],
+      soldCount: 12,
+    },
+    {
+      id: "p2", categoryId: "cat_rov", name: "RoV — บัญชีฮีโร่ครบ 90% แรงค์ดาว",
+      desc: "ฮีโร่ 78/86 ตัว, สกินหายาก 15 ชิ้น, แรงค์ดาว ซีซั่นล่าสุด",
+      price: 590, image: "⚔️",
+      stock: [{ code: "ROV-ACC-1190 | pass: Vt83@Lp", sold: false }],
+      soldCount: 8,
+    },
+    {
+      id: "p3", categoryId: "cat_pubg", name: "PUBG Mobile — บัญชี Conqueror + ชุดพรีเมียม",
+      desc: "แรงค์ Conqueror, ชุด Glacier, M416 Glacier, RP ผ่านทุกซีซั่นย้อนหลัง",
+      price: 890, image: "🎯",
+      stock: [{ code: "PUBGM-ACC-3301 | pass: Gc55$Zt", sold: false }],
+      soldCount: 5,
+    },
+    {
+      id: "p4", categoryId: "cat_valo", name: "Valorant — บัญชี Immortal สกินมีดมังกร",
+      desc: "แรงค์ Immortal 2, สกินมีด Prime, สกินปืนคอลเลกชัน Reaver",
+      price: 1200, image: "🕹️",
+      stock: [], // ตัวอย่างสินค้าหมดสต๊อก
+      soldCount: 20,
+    },
+    {
+      id: "p5", categoryId: "cat_gi", name: "Genshin Impact — บัญชี AR 58 ตัวละคร 5 ดาวครบ",
+      desc: "Adventure Rank 58, ตัวละคร 5 ดาว 9 ตัว, ต้นสมบัติหลักครบ, พริมอเกมสำรอง 40,000",
+      price: 1500, image: "⭐",
+      stock: [{ code: "GI-ACC-5501 | pass: Yl77*Wq", sold: false }],
+      soldCount: 3,
+    },
+    {
+      id: "p6", categoryId: "cat_mlbb", name: "Mobile Legends — บัญชี Mythic สกิน Collector",
+      desc: "แรงค์ Mythic Glory, ฮีโร่ครบ 3 ตัว, สกิน Collector 4 ชิ้น",
+      price: 450, image: "🛡️",
+      stock: [
+        { code: "MLBB-ACC-7701 | pass: Ha12&Bn", sold: false },
+        { code: "MLBB-ACC-7702 | pass: Jo34%Cm", sold: false },
+      ],
+      soldCount: 17,
+    },
+  ];
+
+  const users = [
+    {
+      id: "u_admin", username: "admin", password: simpleHash("admin123"),
+      role: "admin", points: 0, createdAt: nowStr(), banned: false,
+    },
+    {
+      id: "u_demo", username: "demo", password: simpleHash("demo1234"),
+      role: "customer", points: 1000, createdAt: nowStr(), banned: false,
+    },
+  ];
+
+  const topupCodes = [
+    { code: "WELCOME100", points: 100, used: false, usedBy: null },
+    { code: "GAMER500", points: 500, used: false, usedBy: null },
+  ];
+
+  return {
+    settings: { adminCode: "ADMIN2024", siteName: "PixelVault" },
+    categories,
+    products,
+    users,
+    topupCodes,
+    orders: [],
+  };
+}
+
+/* -------- ปรับโครงสร้างข้อมูลหลังอ่านจาก Firebase --------
+   Realtime Database บันทึก array เปล่าไว้เป็นค่าว่าง เมื่ออ่านกลับมา
+   ต้องแปลงให้เป็น array ตามเดิม */
+function toArray(v) {
+  if (Array.isArray(v)) return v;
+  if (v && typeof v === "object") return Object.values(v);
+  return [];
+}
+
+function normalizeDB(db) {
+  if (!db || typeof db !== "object") return seedDB();
+  db.settings = db.settings || { adminCode: "ADMIN2024", siteName: "PixelVault" };
+  db.categories = toArray(db.categories);
+  db.products = toArray(db.products);
+  db.users = toArray(db.users);
+  db.topupCodes = toArray(db.topupCodes);
+  db.orders = toArray(db.orders);
+  db.products.forEach((p) => {
+    p.stock = toArray(p.stock);
+    p.soldCount = p.soldCount || 0;
+  });
+  return db;
+}
+
+/* -------- localStorage fallback (เมื่อ Firebase ใช้ไม่ได้) -------- */
+function persistLocal(db) {
+  localStorage.setItem(DB_KEY, JSON.stringify(db));
+}
+
+function readLocalFallback() {
+  try {
+    const raw = localStorage.getItem(DB_KEY);
+    return raw ? normalizeDB(JSON.parse(raw)) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function startFallback() {
+  _usingFallback = true;
+  _cache = readLocalFallback() || seedDB();
+  return _cache;
+}
+
+/* -------- Firebase initialisation -------- */
+function initFirebase() {
+  if (app) return true;
+  if (typeof firebase === "undefined") return false;
+  app = firebase.initializeApp(firebaseConfig);
+  dbRef = firebase.database().ref(DB_PATH);
+  return true;
+}
+
+/* -------- โหลดฐานข้อมูลจาก Firebase ก่อนแสดงผลทุกหน้า -------- */
+function initDB() {
+  if (_ready) return _ready;
+  _ready = (async () => {
+    if (!initFirebase()) {
+      console.warn("Firebase SDK โหลดไม่สำเร็จ -> ใช้ข้อมูลสำรองใน localStorage");
+      return startFallback();
+    }
+    try {
+      const snap = await dbRef.once("value");
+      if (snap.exists() && snap.val()) {
+        _cache = normalizeDB(snap.val());
+        return _cache;
+      }
+      // ยังไม่มีข้อมูลใน Firebase -> สร้างข้อมูลตั้งต้นและอัปโหลด
+      _cache = seedDB();
+      try {
+        await dbRef.set(_cache);
+      } catch (err) {
+        console.warn("Firebase เขียนข้อมูลตั้งต้นไม่ได้ -> ใช้ localStorage", err);
+        startFallback();
+      }
+      return _cache;
+    } catch (err) {
+      console.warn("Firebase อ่านข้อมูลล้มเหลว -> ใช้ localStorage", err);
+      return startFallback();
+    }
+  })();
+  return _ready;
+}
+
+/* -------- อ่านฐานข้อมูล (ข้อมูลจะพร้อมหลัง initDB สำเร็จ) -------- */
+function getDB() {
+  if (!_cache) _cache = readLocalFallback() || seedDB();
+  return _cache;
+}
+
+/* -------- บันทึกฐานข้อมูลทั้งหมดไปยัง Firebase -------- */
+async function saveDB(db) {
+  _cache = db;
+  if (!db) return;
+  if (_usingFallback || !initFirebase()) {
+    persistLocal(db);
+    return;
+  }
+  try {
+    await dbRef.set(db);
+  } catch (err) {
+    console.warn("Firebase เขียนข้อมูลไม่ได้ -> ใช้ localStorage", err);
+    _usingFallback = true;
+    persistLocal(db);
+  }
+}
+
+/* -------- รีเซ็ตข้อมูลทั้งหมดกลับเป็นชุดข้อมูลตัวอย่าง -------- */
+async function resetDB() {
+  _cache = seedDB();
+  await saveDB(_cache);
+  return _cache;
+}
+
+/* -------- session (ผู้ใช้ที่ล็อกอินอยู่ — เก็บไว้ที่เบราว์เซอร์นี้เท่านั้น) -------- */
+const SESSION_KEY = "gid_store_session";
+
+function getSession() {
+  const raw = localStorage.getItem(SESSION_KEY);
+  return raw ? JSON.parse(raw) : null;
+}
+
+function setSession(userId) {
+  localStorage.setItem(SESSION_KEY, JSON.stringify({ userId }));
+}
+
+function clearSession() {
+  localStorage.removeItem(SESSION_KEY);
+}
+
+function getCurrentUser() {
+  const s = getSession();
+  if (!s) return null;
+  const db = getDB();
+  if (!db || !Array.isArray(db.users)) return null;
+  return db.users.find((u) => u.id === s.userId) || null;
+}
+
+/* -------- admin unlock flag (แยกจาก session, ต้องกรอกรหัสแอดมินทุกครั้งที่เข้าเมนู) -------- */
+const ADMIN_UNLOCK_KEY = "gid_store_admin_unlocked";
+
+function isAdminUnlocked() {
+  return sessionStorage.getItem(ADMIN_UNLOCK_KEY) === "1";
+}
+
+function setAdminUnlocked(v) {
+  if (v) sessionStorage.setItem(ADMIN_UNLOCK_KEY, "1");
+  else sessionStorage.removeItem(ADMIN_UNLOCK_KEY);
+}

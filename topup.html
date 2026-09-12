@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>เติมพ้อย — PixelVault</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<div class="container section">
+  <div class="section-head">
+    <div>
+      <h2>เติมพ้อย</h2>
+      <p>กรอกโค้ดเติมพ้อยที่ได้รับจากแอดมินหรือช่องทางโปรโมชัน</p>
+    </div>
+  </div>
+
+  <div class="card" style="max-width:460px">
+    <div class="flex-between">
+      <span class="text-dim">พ้อยคงเหลือของคุณ</span>
+      <span class="ticket-price" style="font-size:20px" id="current-points">0</span>
+    </div>
+    <hr class="line" />
+    <div id="redeem-msg"></div>
+    <form id="redeem-form">
+      <div class="form-group">
+        <label for="redeem-code">โค้ดเติมพ้อย</label>
+        <input type="text" id="redeem-code" placeholder="เช่น WELCOME100" />
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">แลกโค้ด</button>
+    </form>
+    <p class="text-faint mt-16">ทดลองใช้โค้ด: <b>WELCOME100</b> (+100 พ้อย) หรือ <b>GAMER500</b> (+500 พ้อย)</p>
+  </div>
+</div>
+
+<footer>© 2026 PixelVault — เว็บไซต์สาธิตระบบขายไอดีเกม</footer>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+<script src="js/db.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/main.js"></script>
+<script src="js/topup.js"></script>
+<script>initDB().then(() => initTopupPage());</script>
+</body>
+</html>

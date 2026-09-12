@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>หลังบ้านแอดมิน — PixelVault</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<!-- ด่านกรอกรหัสแอดมิน -->
+<div id="gate-view" class="container">
+  <div class="gate-wrap">
+    <div class="card">
+      <div class="brand-mark" style="font-size:34px">◆</div>
+      <h2>เข้าสู่หลังบ้านแอดมิน</h2>
+      <p>กรุณากรอกรหัสแอดมินเพื่อเปิดเมนูจัดการระบบ</p>
+      <div id="gate-msg"></div>
+      <form id="admin-code-form">
+        <div class="form-group">
+          <input type="password" id="admin-code-input" placeholder="รหัสแอดมิน" required />
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">ปลดล็อก</button>
+      </form>
+      <p class="text-faint mt-16">รหัสตั้งต้น: ADMIN2024</p>
+    </div>
+  </div>
+</div>
+
+<!-- แดชบอร์ดหลังบ้าน -->
+<div id="dashboard-view" class="container section" style="display:none">
+  <div class="section-head">
+    <div>
+      <h2>หลังบ้านแอดมิน</h2>
+      <p>จัดการสินค้า หมวดหมู่ โค้ดเติมพ้อย สมาชิก และคำสั่งซื้อทั้งหมด</p>
+    </div>
+    <button class="btn btn-outline btn-sm" onclick="lockAdmin()">ล็อกหลังบ้าน</button>
+  </div>
+
+  <div class="admin-shell">
+    <div class="admin-side">
+      <button data-tab="overview" onclick="switchTab('overview')">ภาพรวม</button>
+      <button data-tab="products" onclick="switchTab('products')">สินค้า &amp; สต๊อกรหัส</button>
+      <button data-tab="categories" onclick="switchTab('categories')">หมวดหมู่</button>
+      <button data-tab="topupcodes" onclick="switchTab('topupcodes')">โค้ดเติมพ้อย</button>
+      <button data-tab="customers" onclick="switchTab('customers')">สมาชิก</button>
+      <button data-tab="orders" onclick="switchTab('orders')">คำสั่งซื้อ</button>
+      <button data-tab="settings" onclick="switchTab('settings')">ตั้งค่า</button>
+    </div>
+
+    <div>
+      <div class="admin-panel" id="panel-overview"></div>
+      <div class="admin-panel" id="panel-products"></div>
+      <div class="admin-panel" id="panel-categories"></div>
+      <div class="admin-panel" id="panel-topupcodes"></div>
+      <div class="admin-panel" id="panel-customers"></div>
+      <div class="admin-panel" id="panel-orders"></div>
+      <div class="admin-panel" id="panel-settings"></div>
+    </div>
+  </div>
+</div>
+
+<footer>© 2026 PixelVault — เว็บไซต์สาธิตระบบขายไอดีเกม</footer>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+<script src="js/db.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/main.js"></script>
+<script src="js/admin.js"></script>
+<script>initDB().then(() => initAdminPage());</script>
+</body>
+</html>
